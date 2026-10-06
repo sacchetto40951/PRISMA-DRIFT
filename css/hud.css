@@ -1,0 +1,325 @@
+/* hud.css — In-game Head-Up Display and Touch Controls */
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: none;
+  z-index: 30;
+  padding: 20px 28px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#hud.visible {
+  display: flex;
+}
+
+/* Top Stats Bar */
+.hud-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.hud-left-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.hud-label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  color: var(--color-muted);
+}
+
+.hud-value-large {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.hud-value-distance {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-cyan);
+}
+
+.hud-multiplier-badge {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-muted);
+  transition: all 0.2s ease;
+}
+
+.hud-multiplier-badge.boosted {
+  background: linear-gradient(90deg, #ff007f, #ffcc00);
+  color: #000;
+  box-shadow: 0 0 14px var(--glow-gold);
+  transform: scale(1.1);
+}
+
+/* Center HUD Items (Biome + Timer) */
+.hud-center-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-biome-badge {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(10, 15, 30, 0.6);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+#hud-timer-container {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 0, 80, 0.2);
+  border: 1px solid rgba(255, 0, 80, 0.5);
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+
+.hud-timer-label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: #ff6699;
+}
+
+#hud-timer-value {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+#hud-timer-value.critical {
+  color: #ff0055;
+  animation: timerBlink 0.5s infinite alternate;
+}
+
+@keyframes timerBlink {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.4; transform: scale(1.15); }
+}
+
+/* Right HUD Group */
+.hud-right-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#hud-record {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+#hud-recovery-badge {
+  display: none;
+  font-size: 1.3rem;
+  color: #ff3366;
+  filter: drop-shadow(0 0 8px rgba(255, 51, 102, 0.8));
+  animation: heartbeat 1.2s infinite;
+}
+
+#hud-recovery-badge.active {
+  display: block;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.25); }
+  40% { transform: scale(1); }
+  60% { transform: scale(1.15); }
+}
+
+.hud-btn-pause {
+  pointer-events: auto;
+  background: rgba(10, 15, 30, 0.6);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hud-btn-pause:hover {
+  background: rgba(0, 240, 255, 0.2);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+/* Active Power-ups Bar (Bottom left of HUD) */
+#hud-powerups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.hud-powerup-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(10, 15, 30, 0.7);
+  border: 1px solid var(--pu-color, #00f0ff);
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+  min-width: 150px;
+  animation: slideInLeft 0.2s ease;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.hud-powerup-badge.warning-pulse {
+  animation: warningPulse 0.4s infinite alternate;
+}
+
+@keyframes warningPulse {
+  from { border-color: var(--pu-color); transform: scale(1); }
+  to { border-color: #ff0055; transform: scale(1.05); }
+}
+
+.pu-icon {
+  font-size: 1.1rem;
+  color: var(--pu-color, #00f0ff);
+}
+
+.pu-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pu-name {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.pu-status {
+  font-size: 0.65rem;
+  color: var(--pu-color, #00f0ff);
+}
+
+.pu-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pu-bar-fill {
+  height: 100%;
+  transition: width 0.1s linear;
+}
+
+/* Touch Controls (Mobile Virtual Buttons) */
+#touch-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  padding: 0 24px;
+  display: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 40;
+}
+
+#touch-controls.visible {
+  display: flex;
+}
+
+.touch-cluster-left {
+  display: flex;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.touch-cluster-right {
+  pointer-events: auto;
+}
+
+.touch-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(10, 15, 30, 0.65);
+  border: 2px solid rgba(0, 240, 255, 0.4);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-btn:active {
+  background: rgba(0, 240, 255, 0.35);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+  transform: scale(0.92);
+}
+
+.touch-btn-jump {
+  width: 86px;
+  height: 86px;
+  border-color: rgba(255, 0, 127, 0.5);
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: rgba(255, 0, 127, 0.15);
+}
+
+.touch-btn-jump:active {
+  background: rgba(255, 0, 127, 0.4);
+  border-color: var(--color-magenta);
+  box-shadow: 0 0 25px rgba(255, 0, 127, 0.7);
+}

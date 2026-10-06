@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PRISMA DRIFT — Corrida Espacial em Alta Velocidade</title>
+  <meta name="description" content="Um jogo de corrida e plataforma espacial em alta velocidade com física dinâmica, biomas únicos e geração procedural.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/hud.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Main Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- In-Game HUD (Overlaid on canvas) -->
+    <div id="hud">
+      <div class="hud-top-bar">
+        <div class="hud-left-group">
+          <div class="hud-stat-item">
+            <span class="hud-label">PONTOS</span>
+            <span id="hud-score" class="hud-value-large">0</span>
+            <span id="hud-multiplier" class="hud-multiplier-badge">×1.0</span>
+          </div>
+          <div class="hud-stat-item">
+            <span class="hud-label">DISTÂNCIA</span>
+            <span id="hud-distance" class="hud-value-distance">0m</span>
+          </div>
+        </div>
+
+        <div class="hud-center-group">
+          <div id="hud-biome" class="hud-biome-badge">SETOR AURORA</div>
+          <div id="hud-timer-container">
+            <span class="hud-timer-label">TEMPO:</span>
+            <span id="hud-timer-value">75.0s</span>
+          </div>
+        </div>
+
+        <div class="hud-right-group">
+          <div id="hud-recovery-badge" title="Núcleo de Recuperação Ativo">♥</div>
+          <div id="hud-record">RECORDE: 0</div>
+          <button id="btn-pause-hud" class="hud-btn-pause" title="Pausar Jogo [P/Esc]">PAUSAR</button>
+        </div>
+      </div>
+
+      <!-- Active Powerups List (Bottom Left) -->
+      <div id="hud-powerups-list"></div>
+    </div>
+
+    <!-- Virtual Touch Controls for Mobile -->
+    <div id="touch-controls">
+      <div class="touch-cluster-left">
+        <button id="touch-left" class="touch-btn" aria-label="Mover para esquerda">◀</button>
+        <button id="touch-right" class="touch-btn" aria-label="Mover para direita">▶</button>
+      </div>
+      <div class="touch-cluster-right">
+        <button id="touch-jump" class="touch-btn touch-btn-jump" aria-label="Pular">PULO</button>
+      </div>
+    </div>
+
+    <!-- Overlay Screen Container (Menus, Game Over, Settings, Pause) -->
+    <div id="overlay-screens"></div>
+
+    <!-- Achievement Toast Notification -->
+    <div id="achievement-toast"></div>
+  </div>
+
+  <!-- Main Game Script (Native ES Module) -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

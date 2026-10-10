@@ -48,6 +48,9 @@ export function initAudio() {
  * Resume audio context (required after user gesture on some browsers).
  */
 export function resumeAudio() {
+  if (!initialized) {
+    initAudio();
+  }
   if (audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume();
   }

@@ -10,7 +10,7 @@ import {
   renderSettingsScreen, 
   renderHangarScreen 
 } from './screens.js';
-import { setVolume, playUIClick, initAudio, resumeAudio } from '../engine/audio.js';
+import { setVolume, playUIClick, initAudio, resumeAudio, stopBiomeDrone } from '../engine/audio.js';
 import { saveSettings, resetAllData } from '../storage.js';
 import { equipCosmetic } from '../systems/progression.js';
 import { GAME_MODES } from '../core/config.js';
@@ -39,11 +39,14 @@ export function initUI(callbacks) {
     });
   }
 
-  // Audio start trigger on any early click
-  document.addEventListener('click', () => {
+  // Audio start trigger on any early gesture (click, keydown, touch)
+  const triggerAudio = () => {
     initAudio();
     resumeAudio();
-  }, { once: true });
+  };
+  document.addEventListener('click', triggerAudio, { once: true });
+  document.addEventListener('keydown', triggerAudio, { once: true });
+  document.addEventListener('touchstart', triggerAudio, { once: true });
 }
 
 /**
@@ -59,6 +62,7 @@ export function showScreen(screenName, extraData = {}) {
   if (screenName === 'title' || screenName === 'modeSelect' || screenName === 'hangar' || screenName === 'settings') {
     gameState.hasRunStarted = false;
     if (gameState.run) gameState.run.isPlayerSpawned = false;
+    stopBiomeDrone();
   }
 
   if (screenName === 'playing') {

@@ -1,5 +1,5 @@
 // difficulty.js — Progressive difficulty curves and budget system.
-// Each axis (speed, hazards, vocabulary, rest) scales independently.
+// Each axis (speed, hazards, vocabulary, rest, face-count) scales independently.
 
 import { DIFFICULTY, PLAYER } from '../core/config.js';
 
@@ -39,6 +39,7 @@ export function getHazardDensity(distance) {
 /**
  * Get the vocabulary level (what types of segments/hazards are unlocked).
  * Higher level = more complex patterns available.
+ * Levels 0-7 map to progressively harder pattern types.
  */
 export function getVocabularyLevel(distance) {
   if (distance < DIFFICULTY.UNLOCK_NARROW_GAPS) return 0;
@@ -46,7 +47,35 @@ export function getVocabularyLevel(distance) {
   if (distance < DIFFICULTY.UNLOCK_SPIKES) return 2;
   if (distance < DIFFICULTY.UNLOCK_DUAL_HAZARDS) return 3;
   if (distance < DIFFICULTY.UNLOCK_COMPLEX_COMBOS) return 4;
-  return 5;
+  if (distance < DIFFICULTY.UNLOCK_SPIRALS) return 5;
+  if (distance < DIFFICULTY.UNLOCK_ADVANCED) return 6;
+  return 7;
+}
+
+/**
+ * Get the set of face counts (N values) that are unlocked at a given distance.
+ * Always includes 8 (octagon, starting shape). Additional N values unlock progressively.
+ * @param {number} distance
+ * @returns {Set<number>} set of allowed face counts
+ */
+export function getUnlockedFaceCounts(distance) {
+  const allowed = new Set([8]); // Octagon always available
+  if (distance >= DIFFICULTY.UNLOCK_HEXAGON) allowed.add(6);
+  if (distance >= DIFFICULTY.UNLOCK_DECAGON) allowed.add(10);
+  if (distance >= DIFFICULTY.UNLOCK_PENTAGON) allowed.add(5);
+  if (distance >= DIFFICULTY.UNLOCK_DODECAGON) allowed.add(12);
+  if (distance >= DIFFICULTY.UNLOCK_SQUARE) allowed.add(4);
+  return allowed;
+}
+
+/**
+ * Check if a specific face count N is unlocked at the given distance.
+ * @param {number} n - face count
+ * @param {number} distance
+ * @returns {boolean}
+ */
+export function isFaceCountUnlocked(n, distance) {
+  return getUnlockedFaceCounts(distance).has(n);
 }
 
 /**

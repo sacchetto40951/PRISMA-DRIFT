@@ -54,7 +54,33 @@ export function updateLevelGenerator(run) {
 }
 
 /**
- * Generate a single validated ring (or a transition funnel if biome face count changed).
+ * Helper to pick a template according to biome-specific pattern weights.
+ */
+function pickTemplateForBiome(available, biomeDef) {
+  if (!available || available.length === 0) return RING_TEMPLATES.all_solid;
+  if (!biomeDef || !biomeDef.patternWeights) {
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  const weights = available.map(t => {
+    const w = biomeDef.patternWeights[t.id];
+    return w !== undefined ? w : 1.0;
+  });
+
+  const total = weights.reduce((acc, val) => acc + val, 0);
+  if (total <= 0) return available[Math.floor(Math.random() * available.length)];
+
+  let roll = Math.random() * total;
+  for (let i = 0; i < available.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) return available[i];
+  }
+
+  return available[available.length - 1];
+}
+
+/**
+ * Generate a single validated ring (or transition funnels if biome face count changed).
  */
 function generateNextRing(run) {
   const biomeDef = getBiome(run.currentBiome);
@@ -63,14 +89,23 @@ function generateNextRing(run) {
   const prevRing = run.activeRings[run.activeRings.length - 1];
   const prevFaces = prevRing ? (prevRing.numFacesEnd || prevRing.numFaces || TUNNEL.FACES) : targetFaces;
 
-  // If faces changed between previous ring and target biome, insert a triangulated transition funnel
+  // If faces changed between previous ring and target biome, insert 2-3 triangulated transition funnels
   if (prevRing && prevFaces !== targetFaces) {
-    const transitionRing = createTransitionRing(run, prevFaces, targetFaces);
-    run.activeRings.push(transitionRing);
+    const numSteps = TUNNEL.TRANSITION_RING_COUNT || 3;
+    for (let step = 0; step < numSteps; step++) {
+      const t0 = step / numSteps;
+      const t1 = (step + 1) / numSteps;
+      const nStart = Math.round(prevFaces + (targetFaces - prevFaces) * t0);
+      const nEnd = Math.round(prevFaces + (targetFaces - prevFaces) * t1);
+      const transitionRing = createTransitionRing(run, nStart, nEnd, prevFaces, targetFaces, t0, t1);
+      run.activeRings.push(transitionRing);
+    }
   }
 
   const budget = varyBudget(getDifficultyBudget(run.distance));
-  const vocabLevel = getVocabularyLevel(run.distance);
+  const rawVocab = getVocabularyLevel(run.distance);
+  // Cap vocabulary if the biome specifies maxVocab
+  const vocabLevel = biomeDef.maxVocab !== undefined ? Math.min(rawVocab, biomeDef.maxVocab) : rawVocab;
   const forceRest = shouldForceRest(run.distance, run.ringsSinceRest);
 
   let template = null;
@@ -82,7 +117,7 @@ function generateNextRing(run) {
       template = RING_TEMPLATES.rest_ring;
     } else {
       const available = getAvailableTemplates(vocabLevel, budget);
-      template = available[Math.floor(Math.random() * available.length)];
+      template = pickTemplateForBiome(available, biomeDef);
     }
 
     const params = {
@@ -138,14 +173,16 @@ function generateNextRing(run) {
 /**
  * Create a transition ring funnel connecting two polygonal cross-sections with different N.
  */
-function createTransitionRing(run, nStart, nEnd) {
+function createTransitionRing(run, nStart, nEnd, overallNStart = nStart, overallNEnd = nEnd, t0 = 0, t1 = 1) {
   const zStart = run.nextRingZ;
   const zEnd = zStart + TUNNEL.RING_LENGTH;
   run.nextRingZ = zEnd;
   ringCounter++;
 
-  const aStart = TUNNEL.RADIUS * Math.cos(Math.PI / nStart);
-  const aEnd = TUNNEL.RADIUS * Math.cos(Math.PI / nEnd);
+  const aTotalStart = TUNNEL.RADIUS * Math.cos(Math.PI / overallNStart);
+  const aTotalEnd = TUNNEL.RADIUS * Math.cos(Math.PI / overallNEnd);
+  const aStart = (1 - t0) * aTotalStart + t0 * aTotalEnd;
+  const aEnd = (1 - t1) * aTotalStart + t1 * aTotalEnd;
 
   return {
     id: `ring_trans_${ringCounter}`,

@@ -1,7 +1,10 @@
 // validator.js — Validates 3D tunnel ring transitions and reachability.
-// Ensures gap sequences never exceed the player's maximum jump distance.
+// Uses arc-distance (physical units) instead of face-index counts,
+// ensuring correctness across variable face-count N.
 
 import { TUNNEL, PLAYER, PHYSICS } from '../core/config.js';
+
+const TWO_PI = Math.PI * 2;
 
 /**
  * Calculate the maximum Z distance the player can clear in a single jump.
@@ -30,7 +33,36 @@ export function getMaxGapRings() {
 }
 
 /**
- * Check reachability between two consecutive rings.
+ * Calculate the maximum lateral arc-distance (in physical units) the player
+ * can traverse during one ring transition (the time it takes to cross one ring).
+ * lateral_max = LATERAL_SPEED * (RING_LENGTH / v_run)
+ * Measured in radians of tunnel circumference.
+ */
+export function getMaxLateralAngle() {
+  const ringTime = TUNNEL.RING_LENGTH / PLAYER.BASE_SPEED;
+  return PHYSICS.LATERAL_SPEED * ringTime;
+}
+
+/**
+ * Compute the shortest angular distance between two face centers,
+ * properly wrapping around the circle.
+ * @param {number} faceA - face index in polygon A
+ * @param {number} faceB - face index in polygon B
+ * @param {number} nA - face count of polygon A
+ * @param {number} nB - face count of polygon B
+ * @returns {number} shortest angular distance in radians
+ */
+function angularDistanceBetweenFaces(faceA, faceB, nA, nB) {
+  const angleA = -Math.PI / 2 + faceA * (TWO_PI / nA);
+  const angleB = -Math.PI / 2 + faceB * (TWO_PI / nB);
+  let diff = Math.abs(angleA - angleB) % TWO_PI;
+  if (diff > Math.PI) diff = TWO_PI - diff;
+  return diff;
+}
+
+/**
+ * Check reachability between two consecutive rings using arc-distance (radians).
+ * This works correctly regardless of face count N on either ring.
  * @param {object} prevRing - preceding ring
  * @param {object} nextRing - newly generated candidate ring
  * @returns {{ valid: boolean, reason?: string }}
@@ -39,22 +71,16 @@ export function validateRingTransition(prevRing, nextRing) {
   if (!prevRing) return { valid: true };
   if (prevRing.isTransition || nextRing.isTransition) return { valid: true };
 
-  const prevLen = prevRing.facesSolid?.length || TUNNEL.FACES;
-  const nextLen = nextRing.facesSolid?.length || TUNNEL.FACES;
+  const prevN = prevRing.facesSolid?.length || prevRing.numFaces || TUNNEL.FACES;
+  const nextN = nextRing.facesSolid?.length || nextRing.numFaces || TUNNEL.FACES;
 
-  if (prevLen !== nextLen) {
-    // Cross-N rings are connected by a dedicated transition funnel
-    return { valid: true };
-  }
-
-  const N = nextLen;
   const prevSolid = [];
   const nextSolid = [];
 
-  for (let i = 0; i < prevLen; i++) {
+  for (let i = 0; i < prevN; i++) {
     if (prevRing.facesSolid[i]) prevSolid.push(i);
   }
-  for (let i = 0; i < nextLen; i++) {
+  for (let i = 0; i < nextN; i++) {
     if (nextRing.facesSolid[i]) nextSolid.push(i);
   }
 
@@ -63,19 +89,18 @@ export function validateRingTransition(prevRing, nextRing) {
     return { valid: false, reason: 'Next ring has zero solid faces' };
   }
 
+  // Maximum angular distance the player can traverse laterally in one ring transition
+  const maxAngle = getMaxLateralAngle() * 1.5; // 1.5x margin for comfort
+
   // Check that at least one solid face in prevRing has a reachable path to nextRing
-  // A face is reachable if within 2 lateral face shifts (or straight ahead)
   let foundReachablePath = false;
 
   for (const p of prevSolid) {
     for (const n of nextSolid) {
-      const diff = Math.min(
-        Math.abs(p - n),
-        N - Math.abs(p - n)
-      );
+      const angDist = angularDistanceBetweenFaces(p, n, prevN, nextN);
 
-      // Within 2 face shifts is safe and comfortable
-      if (diff <= 2) {
+      // Reachable if angular distance is within lateral movement budget
+      if (angDist <= maxAngle) {
         // Also check that the landing face isn't completely blocked by an unavoidable hazard
         const hasBlockingHazard = nextRing.hazards?.some(h => h.face === n);
         if (!hasBlockingHazard || nextSolid.length > 1) {
@@ -88,7 +113,7 @@ export function validateRingTransition(prevRing, nextRing) {
   }
 
   if (!foundReachablePath) {
-    return { valid: false, reason: 'No reachable solid face in next ring' };
+    return { valid: false, reason: `No reachable solid face in next ring (prevN=${prevN}, nextN=${nextN}, maxAngle=${maxAngle.toFixed(3)}rad)` };
   }
 
   return { valid: true };
@@ -99,7 +124,6 @@ export function validateRingTransition(prevRing, nextRing) {
  * can jump across. Checks against the live d_max calculation.
  *
  * @param {object[]} activeRings - The current ring list (including the new candidate at the end)
- * @param {number} lookback - How many most recent rings to inspect (default: maxGapRings + 2)
  * @returns {{ valid: boolean, reason?: string }}
  */
 export function validateGapSequence(activeRings) {

@@ -1,4 +1,6 @@
 // biomes.js — Biome definitions with visual, audio, and gameplay modifiers.
+// Each biome now also specifies preferred hole patterns and vocabulary ranges,
+// making "level types" emergent from biome parameter combinations.
 
 export const BIOMES = {
   aurora: {
@@ -27,6 +29,17 @@ export const BIOMES = {
     hazardDensity: 0.3,
     platformWidthBonus: 60,
     gapReduction: 0.7,
+    // Hole pattern weights — controls which patterns appear more often in this biome.
+    // Patterns not listed (or weight 0) are still available if vocab level allows,
+    // but these are preferred. Keys are template IDs from segments.js.
+    patternWeights: {
+      single_gap: 3.0,
+      single_spike: 1.0,
+      all_solid: 2.0,
+      rest_ring: 1.5,
+    },
+    // Vocabulary range override — biome can restrict or expand available vocab
+    maxVocab: 3, // Aurora never uses patterns beyond vocab 3
     // Power-up weights (relative frequency)
     powerupWeights: {
       prismaShield: 0.3,
@@ -68,6 +81,14 @@ export const BIOMES = {
     hazardDensity: 0.6,
     platformWidthBonus: 30,
     gapReduction: 1.0,
+    patternWeights: {
+      single_gap: 2.0,
+      alternating_holes: 2.5,
+      spiral_run: 1.5,
+      spiral_gap: 1.5,
+      double_adjacent: 1.0,
+    },
+    maxVocab: null, // No restriction — uses distance-based vocab
     powerupWeights: {
       prismaShield: 0.1,
       doubleJump: 0.1,
@@ -107,6 +128,15 @@ export const BIOMES = {
     hazardDensity: 1.4,
     platformWidthBonus: 0,
     gapReduction: 1.0,
+    patternWeights: {
+      single_gap: 1.5,
+      spike_gauntlet_3d: 2.5,
+      dual_gaps: 2.0,
+      narrow_bridge: 2.0,
+      double_adjacent: 1.5,
+      chaser: 1.0,
+    },
+    maxVocab: null,
     powerupWeights: {
       prismaShield: 0.4,
       doubleJump: 0.15,
@@ -147,6 +177,14 @@ export const BIOMES = {
     platformWidthBonus: 10,
     gapReduction: 0.9,
     movingPlatformChance: 0.6,
+    patternWeights: {
+      alternating_checker: 2.0,
+      alternating_holes: 2.5,
+      spiral_gap: 2.0,
+      chaser: 1.5,
+      single_gap: 1.0,
+    },
+    maxVocab: null,
     powerupWeights: {
       prismaShield: 0.1,
       doubleJump: 0.2,
@@ -186,6 +224,14 @@ export const BIOMES = {
     hazardDensity: 0.8,
     platformWidthBonus: 20,
     gapReduction: 1.2,
+    patternWeights: {
+      single_gap: 1.5,
+      dual_gaps: 1.5,
+      safe_window: 2.0,
+      spiral_gap: 1.5,
+      alternating_checker: 1.0,
+    },
+    maxVocab: null,
     powerupWeights: {
       prismaShield: 0.1,
       doubleJump: 0.15,
@@ -225,6 +271,15 @@ export const BIOMES = {
     hazardDensity: 1.8,
     platformWidthBonus: -20,
     gapReduction: 1.1,
+    patternWeights: {
+      spike_gauntlet_3d: 2.0,
+      chaser: 2.5,
+      safe_window: 1.5,
+      double_adjacent: 2.0,
+      dual_gaps: 1.5,
+      narrow_bridge: 1.5,
+    },
+    maxVocab: null,
     powerupWeights: {
       prismaShield: 0.15,
       doubleJump: 0.1,
@@ -265,6 +320,14 @@ export const BIOMES = {
     platformWidthBonus: 0,
     gapReduction: 1.0,
     pulseIntensity: 0.3,
+    patternWeights: {
+      safe_window: 2.5,
+      spiral_gap: 2.0,
+      alternating_holes: 2.0,
+      chaser: 1.5,
+      dual_gaps: 1.0,
+    },
+    maxVocab: null,
     powerupWeights: {
       prismaShield: 0.1,
       doubleJump: 0.1,
@@ -289,13 +352,13 @@ export const NORMAL_BIOME_SEQUENCE = [
 
 // Biome selection for Endless mode — distance thresholds where new biomes unlock
 export const ENDLESS_BIOME_UNLOCKS = [
-  { distance: 0, biome: 'aurora' },
-  { distance: 3000, biome: 'currentV' },
-  { distance: 6000, biome: 'debris' },
-  { distance: 9000, biome: 'magnetic' },
-  { distance: 13000, biome: 'nullZone' },
-  { distance: 18000, biome: 'abyssPrisma' },
-  { distance: 25000, biome: 'pulsarCore' },
+  { distance: 0, biome: 'aurora' },        // N=8 (Octagon - starting corridor)
+  { distance: 200, biome: 'currentV' },    // N=6 (Hexagon - high speed)
+  { distance: 350, biome: 'magnetic' },    // N=6 (Hexagon - magnetic field)
+  { distance: 400, biome: 'nullZone' },    // N=10 (Decagon - dense obstacles)
+  { distance: 500, biome: 'abyssPrisma' },  // N=5 (Pentagon - deep chasms)
+  { distance: 600, biome: 'pulsarCore' },  // N=12 (Dodecagon - narrow panels)
+  { distance: 800, biome: 'debris' },      // N=4 (Square - wide platforms)
 ];
 
 /**
@@ -307,15 +370,35 @@ export function getBiome(biomeId) {
 
 /**
  * Get available biomes at a given distance (Endless mode).
+ * Now also filters by face-count unlock progression.
  */
 export function getAvailableBiomes(distance) {
+  // Import dynamically to avoid circular dependency
   const available = [];
   for (const unlock of ENDLESS_BIOME_UNLOCKS) {
     if (distance >= unlock.distance) {
-      available.push(unlock.biome);
+      const biome = BIOMES[unlock.biome];
+      if (biome && isFaceCountAvailable(biome.faces, distance)) {
+        available.push(unlock.biome);
+      }
     }
   }
-  return available;
+  return available.length > 0 ? available : ['aurora'];
+}
+
+/**
+ * Check if a given face count is available at the current distance.
+ * Octagon (8) is always available. Other counts unlock progressively.
+ */
+function isFaceCountAvailable(n, distance) {
+  if (n === 8) return true;
+  // Use inline thresholds to avoid circular import from difficulty.js
+  if (n === 6 && distance >= 200) return true;
+  if (n === 10 && distance >= 400) return true;
+  if (n === 5 && distance >= 500) return true;
+  if (n === 12 && distance >= 600) return true;
+  if (n === 4 && distance >= 800) return true;
+  return false;
 }
 
 /**

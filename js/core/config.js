@@ -7,13 +7,16 @@ export const CANVAS = {
 };
 
 export const TUNNEL = {
-  FACES: 8,                  // Octagonal tunnel cross-section
+  FACES: 8,                  // Default octagonal tunnel cross-section
+  MIN_FACES: 4,              // Minimum face count (square, most angular)
+  MAX_FACES: 12,             // Maximum face count (dodecagon, most rounded)
   RADIUS: 4.2,               // Vertex radius
   APOTHEM: 3.88,             // Distance to flat face floor (4.2 * cos(pi/8))
   RING_LENGTH: 5.5,          // Length of each ring segment along Z
   SPAWN_AHEAD_RINGS: 26,     // Number of rings spawned ahead of the player
   DESPAWN_BEHIND_RINGS: 5,   // Rings kept behind player before recycling
   WALL_THICKNESS: 0.15,      // Thickness of panel meshes
+  TRANSITION_RING_COUNT: 3,  // Number of transition rings between different N-gons
 };
 
 export const PHYSICS = {
@@ -52,12 +55,20 @@ export const DIFFICULTY = {
   REST_INTERVAL_MIN: 3,
   REST_FLOOR: 1,
   TUTORIAL_RINGS: 12,       // Rings of tutorial-only gameplay at start
-  // Unlock thresholds (in Z distance units)
-  UNLOCK_NARROW_GAPS: 150,
-  UNLOCK_ALTERNATING_GAPS: 300,
-  UNLOCK_SPIKES: 450,
-  UNLOCK_DUAL_HAZARDS: 700,
-  UNLOCK_COMPLEX_COMBOS: 1000,
+  // Unlock thresholds (in Z distance units) — vocabulary levels 0-7
+  UNLOCK_NARROW_GAPS: 150,       // Vocab 1
+  UNLOCK_ALTERNATING_GAPS: 300,  // Vocab 2
+  UNLOCK_SPIKES: 450,            // Vocab 3
+  UNLOCK_DUAL_HAZARDS: 700,      // Vocab 4
+  UNLOCK_COMPLEX_COMBOS: 1000,   // Vocab 5
+  UNLOCK_SPIRALS: 1400,          // Vocab 6: spiral + double_adjacent
+  UNLOCK_ADVANCED: 2000,         // Vocab 7: chaser + safe_window
+  // Face-count unlock thresholds (distance where non-octagon biomes become available)
+  UNLOCK_HEXAGON: 200,           // N=6 biomes available
+  UNLOCK_PENTAGON: 500,          // N=5 biomes available
+  UNLOCK_SQUARE: 800,            // N=4 biomes available
+  UNLOCK_DECAGON: 400,           // N=10 biomes available
+  UNLOCK_DODECAGON: 600,         // N=12 biomes available
 };
 
 export const CAMERA = {
